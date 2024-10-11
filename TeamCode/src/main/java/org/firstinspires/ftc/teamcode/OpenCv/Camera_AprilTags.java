@@ -109,6 +109,24 @@ public class Camera_AprilTags extends LinearOpMode
                         tagFound = true;
                         break;
                     }
+                    if(tag.id == right)
+                    {
+                        tagOfInterest = tag;
+                        tagFound = true;
+                        break;
+                    }
+                    if(tag.id == front)
+                    {
+                        tagOfInterest = tag;
+                        tagFound = true;
+                        break;
+                    }
+                    if(tag.id == back)
+                    {
+                        tagOfInterest = tag;
+                        tagFound = true;
+                        break;
+                    }
                 }
 
                 if(tagFound)
@@ -174,9 +192,15 @@ public class Camera_AprilTags extends LinearOpMode
         if(tagOfInterest == null || tagOfInterest.id == left){
             //do some action
         }
-        else if(tagOfInterest.id == 42){
+        else if(tagOfInterest.id == right){
             //do some action
 
+        }
+        else if(tagOfInterest.id == front){
+            //do some code
+        }
+        else if(tagOfInterest.id == back) {
+        //do some code
         }
 
 
