@@ -57,10 +57,13 @@ public class Camera_AprilTags extends LinearOpMode
     double tagsize = 0.166;
 
     //Tags details
-    int left = 1; // Tag ID 18 from the 36h11 family
-    int right = 2;
-    int back = 3;
-    int front = 4;
+    int tag11 = 11; // Tag ID 18 from the 36h11 family
+    int tag12 = 12;
+    int tag13 = 13;
+    int tag14 = 14;
+    int tag15 = 15;
+    int tag16 = 16;
+
 
     AprilTagDetection tagOfInterest = null;
 
@@ -103,7 +106,37 @@ public class Camera_AprilTags extends LinearOpMode
 
                 for(AprilTagDetection tag : currentDetections)
                 {
-                    if(tag.id == left)
+                    if(tag.id == tag11)
+                    {
+                        tagOfInterest = tag;
+                        tagFound = true;
+                        break;
+                    }
+                    if(tag.id == tag12)
+                    {
+                        tagOfInterest = tag;
+                        tagFound = true;
+                        break;
+                    }
+                    if(tag.id == tag13)
+                    {
+                        tagOfInterest = tag;
+                        tagFound = true;
+                        break;
+                    }
+                    if(tag.id == tag14)
+                    {
+                        tagOfInterest = tag;
+                        tagFound = true;
+                        break;
+                    }
+                    if(tag.id == tag15)
+                    {
+                        tagOfInterest = tag;
+                        tagFound = true;
+                        break;
+                    }
+                    if(tag.id == tag16)
                     {
                         tagOfInterest = tag;
                         tagFound = true;
@@ -171,12 +204,24 @@ public class Camera_AprilTags extends LinearOpMode
         }
 
         /* Actually do something useful */
-        if(tagOfInterest == null || tagOfInterest.id == left){
+        if(tagOfInterest == null || tagOfInterest.id == tag11){
             //do some action
         }
-        else if(tagOfInterest.id == 42){
+        else if(tagOfInterest.id == tag12){
             //do some action
 
+        }
+        else if(tagOfInterest.id == tag13){
+            //do some code
+        }
+        else if(tagOfInterest.id == tag14) {
+        //do some code
+        }
+        else if(tagOfInterest.id == tag15) {
+            //do some code
+        }
+        else if(tagOfInterest.id == tag16) {
+            //do some code
         }
 
 
