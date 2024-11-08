@@ -20,8 +20,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
  * Motor Port 2 RRMotor
  * Motor Port 3 FRMotor
  *
- * I2C Port 0
- * I2C Port 1
+ * I2C Port 0 RRDistance
+ * I2C Port 1 FLDistance
  * I2C Port 2 FRDistance
  * I2C Port 3 RLDistance
  *
@@ -54,27 +54,36 @@ public class Autonomous1 extends LinearOpMode {
 
     double Kp = 0.04;
     double Kd = 0.0004;
+    double maxPID_Power = 0.75;
+    double Kp_posn = 0.2;
+    double Kd_posn = 0.04;
+    double maxPID_Power_posn = 0.3;
+    double Kp_strf = 0.2;
+    double Kd_strf = 0.04;
+    double maxPID_Power_strf = 0.9;
     double lastError = 0;
+    double distanceTol = 1;
     double power=0;
     double twist = 0;
-    double maxPID_Power = 0.75;
     double gripperOpenPosn = 0.99;
-    double gripperSampleClosePosn = 0.4;
-    double gripperClosePosn = 0.35;
+    double gripperSampleClosePosn = 0.0;
+    double gripperClosePosn = 0.0;
     int autonomousStage = 0;
     int armExtensionsTol = 10;
     int armExtendHomePosn = -10;
     int armElbowHomePosn = 10;
     int armRiserHomePosn = 0;
+    int straightDirection = 0;
     int yellowSampleDirection = 90;
 
-    int elbowZeroDegreeOffset = 874;
+    int elbowZeroDegreeOffset = 837;
     double elbowCountPerDegree = 14.67;
-    int extendHomePosn = -10;
-    int extendStartPosn = -550;
+    int extendHomePosn = -40;
+    int extendStartPosn = -500;
     int elbowStartAngle = 85;
-    int extendHangPosn = -250;  //-800;
+    int extendHangPosn = -500;  //-800;
     int elbowHangAngle = 20;
+    boolean armPosnControl = false;
     ElapsedTime timer = new ElapsedTime();
     IMU imu;
 
@@ -95,7 +104,13 @@ public class Autonomous1 extends LinearOpMode {
             distTelemetry();
             if(timer.seconds()<1) {
                 motor_Gripper.setPosition(gripperOpenPosn);
-                armHangSpecimenPosition(extendStartPosn, (elbowZeroDegreeOffset + (int) (elbowStartAngle * elbowCountPerDegree)));
+                armPosnControl = true;
+                motor_Extend.setTargetPosition(extendStartPosn);
+                motor_Extend.setPower(-0.5);
+                motor_Extend.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                motor_Elbow.setTargetPosition((elbowZeroDegreeOffset + (int) (elbowStartAngle * elbowCountPerDegree)));
+                motor_Elbow.setPower(0.95);
+                motor_Elbow.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             }
             if(timer.seconds()>5){
                 motor_Gripper.setPosition(gripperSampleClosePosn);
@@ -105,8 +120,9 @@ public class Autonomous1 extends LinearOpMode {
         motor_Gripper.setPosition(gripperSampleClosePosn);
         while(opModeIsActive()){
             if(autonomousStage==0) {
-                if ((FRDist.getDistance(DistanceUnit.INCH) > 5)) {
-                    drvStraight(0.3);
+                if (Math.abs(FRDist.getDistance(DistanceUnit.INCH) - 7.5) > distanceTol) {
+                    power = PIDControl(7.5, FRDist.getDistance(DistanceUnit.INCH), Kp_posn, Kd_posn, maxPID_Power_posn);
+                    drvStraight(-power);
                 }
                 else {
                     drvStraight(0);
@@ -114,14 +130,17 @@ public class Autonomous1 extends LinearOpMode {
                 }
             }
             if(autonomousStage ==1) {
-                armHangSpecimenPosition(extendHangPosn, (elbowZeroDegreeOffset + (int) (elbowHangAngle * elbowCountPerDegree)));
+                armPosnControl = true;
+                motor_Extend.setTargetPosition(extendHangPosn);
+                motor_Elbow.setTargetPosition(elbowZeroDegreeOffset + (int) (elbowHangAngle * elbowCountPerDegree));
                 timer.reset();
                 autonomousStage = 2;
             }
             if(autonomousStage ==2) {
                 if(timer.seconds()>1){
                     motor_Gripper.setPosition(gripperOpenPosn);
-                    armHangSpecimenPosition(extendHomePosn, elbowZeroDegreeOffset );
+                    armPosnControl = true;
+//                    armHangSpecimenPosition(extendHomePosn, elbowZeroDegreeOffset );
                     autonomousStage = 3;
                     timer.reset();
                 }
@@ -136,32 +155,31 @@ public class Autonomous1 extends LinearOpMode {
                 }
             }
             if(autonomousStage==4){
-//                if(timer.seconds()>2) {
-                    if (Math.abs(yellowSampleDirection - imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES)) > 2) {
-                        power = PIDControl(yellowSampleDirection, imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
+                    if (Math.abs(straightDirection - imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES)) > 2) {
+                        power = PIDControl(straightDirection, imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES), Kp, Kd, maxPID_Power);
                         pidDrive(power);
                     } else {
                         pidDrive(0);
                         autonomousStage = 5;
                     }
-//                }
             }
             if(autonomousStage==5){
-                if(Math.max(FRDist.getDistance(DistanceUnit.INCH), FLDist.getDistance(DistanceUnit.INCH))>14){
-                    drvStraight(0.2);
+                if(Math.abs(LeftDist.getDistance(DistanceUnit.INCH)-12.5)>distanceTol){
+                    power = PIDControl(12, LeftDist.getDistance(DistanceUnit.INCH), Kp_strf, Kd_strf, maxPID_Power_strf);
+                    strafe(power);
                     timer.reset();
                 }
                 else {
-                    drvStraight(0);
+                    strafe(0);
                     if(timer.seconds()>0){
-                        armHangSpecimenPosition(extendHangPosn, elbowZeroDegreeOffset );
+//                        armHangSpecimenPosition(extendHangPosn, elbowZeroDegreeOffset );
                         autonomousStage = 6;
                     }
                 }
             }
             if(autonomousStage==6){
-                if(Math.abs(0-imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES))>1){
-                    power = PIDControl(0, imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
+                if(Math.abs(straightDirection-imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES))>1){
+                    power = PIDControl(straightDirection, imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES), Kp, Kd, maxPID_Power);
                     pidDrive(power);
                 }
                 else {
@@ -183,7 +201,7 @@ public class Autonomous1 extends LinearOpMode {
             }
             if(autonomousStage==7){
                 if(Math.abs(0-imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES))>1){
-                    power = PIDControl(0, imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
+                    power = PIDControl(0, imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES), Kp, Kd, maxPID_Power);
                     pidDrive(power);
                 }
                 else {
@@ -258,15 +276,14 @@ public class Autonomous1 extends LinearOpMode {
         mecanum_drive(0, 0, 0);
     }
 
-    public double PIDControl(double refrence, double state) {
+    public double PIDControl(double refrence, double state, double p, double d, double pwr) {
         double error = (refrence - state);
-        telemetry.addData("Error: ", error);
         double derivative = (error - lastError) / (timer.seconds());
         lastError = error;
         timer.reset();
-        double output = (error * Kp) + (derivative * Kd);
-        output = Math.min(output, maxPID_Power);
-        output = Math.max(output, -maxPID_Power);
+        double output = (error * p) + (derivative * d);
+        output = Math.min(output, pwr);
+        output = Math.max(output, -pwr);
         return output;
     }
 
@@ -311,17 +328,19 @@ public class Autonomous1 extends LinearOpMode {
     public void armHangSpecimenPosition(int extend, int elbow){
         motor_Extend.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motor_Elbow.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        motor_Riser.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        if(Math.abs(motor_Extend.getCurrentPosition()-extend)>armExtensionsTol) {
+        if((Math.abs(motor_Extend.getCurrentPosition()-extend)>armExtensionsTol) && armPosnControl) {
             motor_Extend.setTargetPosition(extend);
             motor_Extend.setPower(-0.5);
             motor_Extend.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            telemetry.addData("Extend Motor Request", extend);
+            telemetry.update();
         }
-        if(Math.abs(motor_Elbow.getCurrentPosition()-elbow)>armExtensionsTol) {
+        if((Math.abs(motor_Elbow.getCurrentPosition()-elbow)>armExtensionsTol) && armPosnControl) {
             motor_Elbow.setTargetPosition(elbow);
             motor_Elbow.setPower(0.95);
             motor_Elbow.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         }
+        armPosnControl = false;
     }
     public void testArmExtensions(){
         motor_Extend.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -350,6 +369,8 @@ public class Autonomous1 extends LinearOpMode {
         motor_Extend.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         motor_Elbow.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         motor_Riser.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motor_Extend.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motor_Elbow.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
 
