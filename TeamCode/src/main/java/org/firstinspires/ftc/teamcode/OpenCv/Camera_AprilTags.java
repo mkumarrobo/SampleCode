@@ -65,7 +65,7 @@ public class Camera_AprilTags extends LinearOpMode
     int tag16 = 16;
 
 
-    AprilTagDetection tagOfInterest = null;
+    public AprilTagDetection tagOfInterest = null;
 
     @Override
     public void runOpMode()
