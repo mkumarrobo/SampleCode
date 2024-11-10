@@ -14,7 +14,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 @TeleOp(name="RemoteControl")
-public class TeleOp1 extends LinearOpMode {
+public class TeleOpJeet extends LinearOpMode {
 
 
     DcMotor motor_FLM = null;
@@ -40,7 +40,7 @@ public class TeleOp1 extends LinearOpMode {
     IMU imu;
 
     double gripperOpenPosn = 0.7;
-    double gripperClosePosn = 0.0;
+    double gripperClosePosn = -0.5;
     int elbowRequest = 0;
     int extendRequest = 0;
     int armExtensionsTol = 50;
@@ -129,22 +129,22 @@ public class TeleOp1 extends LinearOpMode {
                 }
             }
 
-            if(gamepad2.right_stick_x<-0) {
+            if(gamepad2.left_stick_x<-0) {
                 if(!extendPosnCtrl){
                     extendRequest = -10;
                 }
                 motor_Extend.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                motor_Extend.setPower(gamepad2.right_stick_x*-0.5);
+                motor_Extend.setPower(gamepad2.left_stick_x*-0.5);
                 extendRequest = motor_Extend.getCurrentPosition();
                 extendPosnCtrl = true;
             }
             else {
-                if (gamepad2.right_stick_x > 0) {
+                if (gamepad2.left_stick_x > 0) {
                     if(!extendPosnCtrl){
                         extendRequest = -10;
                     }
                     motor_Extend.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                    motor_Extend.setPower(gamepad2.right_stick_x * -0.5);
+                    motor_Extend.setPower(gamepad2.left_stick_x * -0.5);
                     extendRequest = motor_Extend.getCurrentPosition();
                     extendPosnCtrl = true;
                 }
@@ -159,7 +159,7 @@ public class TeleOp1 extends LinearOpMode {
                 armPosnCtrl = false;
             }
 
-            if(((Math.abs(extendRequest-motor_Extend.getCurrentPosition())>armExtensionsTol))&&(Math.abs(gamepad2.right_stick_x)<0.1)&&extendPosnCtrl){
+            if(((Math.abs(extendRequest-motor_Extend.getCurrentPosition())>armExtensionsTol))&&(Math.abs(gamepad2.left_stick_x)<0.1)&&extendPosnCtrl){
                 motor_Extend.setPower(0);
                 motor_Extend.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                 motor_Extend.setTargetPosition(extendRequest);
@@ -169,7 +169,7 @@ public class TeleOp1 extends LinearOpMode {
             }
             drive = (gamepad1.left_stick_y)*-0.6;
             strafe = gamepad1.left_stick_x;
-            twist = 0.5*(gamepad1.right_trigger-gamepad1.left_trigger);
+            twist = 0.5*(gamepad1.right_stick_x-(-gamepad1.right_stick_x));
             if(gamepad1.dpad_up){
                 yawReq = 0;
             }
