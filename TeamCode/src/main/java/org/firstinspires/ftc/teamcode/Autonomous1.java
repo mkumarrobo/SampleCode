@@ -8,10 +8,22 @@ import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
-
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.firstinspires.ftc.robotcore.external.ClassFactory;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.Camera;
+import org.openftc.apriltag.AprilTagDetection;
+import org.openftc.easyopencv.OpenCvCamera;
+import org.openftc.easyopencv.OpenCvCameraFactory;
+import org.openftc.easyopencv.OpenCvCameraRotation;
+import org.firstinspires.ftc.teamcode.OpenCv.AprilTagDetectionPipeline;
+
+import java.util.ArrayList;
+
 
 /**
  * Control Hub
@@ -34,6 +46,23 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 @Autonomous(name="TestSens")
 public class Autonomous1 extends LinearOpMode {
 
+    OpenCvCamera camera;
+    AprilTagDetectionPipeline aprilTagDetectionPipeline;
+
+    static final double FEET_PER_METER = 3.28084;
+
+    // Lens intrinsics
+    // UNITS ARE PIXELS
+    // NOTE: this calibration is for the C920 webcam at 800x448.
+    // You will need to do your own calibration for other configurations!
+    double fx = 578.272;
+    double fy = 578.272;
+    double cx = 402.145;
+    double cy = 221.506;
+
+    // UNITS ARE METERS
+    double tagsize = 0.166;
+
     DcMotor motor_FLM = null;
     DcMotor motor_RLM = null;
     DcMotor motor_FRM = null;
@@ -51,6 +80,13 @@ public class Autonomous1 extends LinearOpMode {
     DistanceSensor RRDist = null;
     DistanceSensor RightDist = null;
     DistanceSensor LeftDist = null;
+
+    int tag11 = 11; // Tag ID 18 from the 36h11 family
+    int tag12 = 12;
+    int tag13 = 13;
+    int tag14 = 14;
+    int tag15 = 15;
+    int tag16 = 16;
 
     double Kp = 0.04;
     double Kd = 0.0004;
@@ -87,7 +123,7 @@ public class Autonomous1 extends LinearOpMode {
     ElapsedTime timer = new ElapsedTime();
     IMU imu;
 
-
+    public AprilTagDetection tagOfInterest = null;
 
 
 
@@ -115,6 +151,88 @@ public class Autonomous1 extends LinearOpMode {
             if(timer.seconds()>5){
                 motor_Gripper.setPosition(gripperSampleClosePosn);
             }
+            ArrayList<AprilTagDetection> currentDetections = aprilTagDetectionPipeline.getLatestDetections();
+
+            if(currentDetections.size() != 0)
+            {
+                boolean tagFound = false;
+
+                for(AprilTagDetection tag : currentDetections)
+                {
+                    if(tag.id == tag11)
+                    {
+                        tagOfInterest = tag;
+                        tagFound = true;
+                        break;
+                    }
+                    if(tag.id == tag12)
+                    {
+                        tagOfInterest = tag;
+                        tagFound = true;
+                        break;
+                    }
+                    if(tag.id == tag13)
+                    {
+                        tagOfInterest = tag;
+                        tagFound = true;
+                        break;
+                    }
+                    if(tag.id == tag14)
+                    {
+                        tagOfInterest = tag;
+                        tagFound = true;
+                        break;
+                    }
+                    if(tag.id == tag15)
+                    {
+                        tagOfInterest = tag;
+                        tagFound = true;
+                        break;
+                    }
+                    if(tag.id == tag16)
+                    {
+                        tagOfInterest = tag;
+                        tagFound = true;
+                        break;
+                    }
+                }
+
+                if(tagFound)
+                {
+                    telemetry.addLine("Tag of interest is in sight!\n\nLocation data:");
+                }
+                else
+                {
+                    telemetry.addLine("Don't see tag of interest :(");
+
+                    if(tagOfInterest == null)
+                    {
+                        telemetry.addLine("(The tag has never been seen)");
+                    }
+                    else
+                    {
+                        telemetry.addLine("\nBut we HAVE seen the tag before; last seen at:");
+                    }
+                }
+
+            }
+            else
+            {
+                telemetry.addLine("Don't see tag of interest :(");
+
+                if(tagOfInterest == null)
+                {
+                    telemetry.addLine("(The tag has never been seen)");
+                }
+                else
+                {
+                    telemetry.addLine("\nBut we HAVE seen the tag before; last seen at:");
+                }
+
+            }
+
+            telemetry.update();
+            sleep(20);
         }
         waitForStart();
         motor_Gripper.setPosition(gripperSampleClosePosn);
@@ -192,6 +310,12 @@ public class Autonomous1 extends LinearOpMode {
                     drvStraight(0.3);
                     timer.reset();
                 }
+                else if(tagOfInterest.id == tag11) {
+                    drvStraight(0);
+                    if(timer.seconds()>0){
+                        autonomousStage = 6;
+                    }
+                }
                 else {
                     drvStraight(0);
                     if(timer.seconds()>0){
@@ -227,7 +351,6 @@ public class Autonomous1 extends LinearOpMode {
 
 
 ///////////////////////////////////////////////////////////////////////////////////
-
 
 
     public void pidDrive(double dr) {
@@ -380,6 +503,26 @@ public class Autonomous1 extends LinearOpMode {
         initArmExtensions();
         initServo();
         initializeIMU();
+
+        // Initialize camera and pipeline
+        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
+        aprilTagDetectionPipeline = new AprilTagDetectionPipeline(tagsize, fx, fy, cx, cy);
+        camera.setPipeline(aprilTagDetectionPipeline);
+        camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+        {
+            @Override
+            public void onOpened()
+            {
+                camera.startStreaming(800,448, OpenCvCameraRotation.UPRIGHT);
+            }
+
+            @Override
+            public void onError(int errorCode)
+            {
+
+            }
+        });
     }
     public void initDriveMotors(){
         motor_FLM = hardwareMap.dcMotor.get("FLMotor");
