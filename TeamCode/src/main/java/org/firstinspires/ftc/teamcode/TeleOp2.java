@@ -13,7 +13,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
-@TeleOp(name="RemoteControl2")
+@TeleOp(name="RemoteControl 2")
 public class TeleOp2 extends LinearOpMode {
 
 
@@ -39,8 +39,8 @@ public class TeleOp2 extends LinearOpMode {
 
     IMU imu;
 
-    double gripperOpenPosn = 0.6;
-    double gripperClosePosn = 0.15;
+    double gripperOpenPosn = 0.7;
+    double gripperClosePosn = 0.1;
     int elbowRequest = 0;
     int extendRequest = 0;
     int armExtensionsTol = 50;
@@ -91,24 +91,168 @@ public class TeleOp2 extends LinearOpMode {
         while (opModeIsActive()){
             distTelemetry();
             if(gamepad2.right_stick_y<-0.1) {
-//                motor_Elbow.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-//                    motor_Elbow.setPower(gamepad2.right_stick_y * -0.5);
+                if(!armPosnCtrl){
+                    elbowRequest = 10;
+                }
+                motor_Elbow.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                motor_Elbow.setPower(0);
+                if(!gamepad2.right_bumper) {
+                    motor_Elbow.setPower(gamepad2.right_stick_y * -0.5);
+                }
+                else{
+                    motor_Elbow.setPower(gamepad2.right_stick_y * -1);
+                }
+                elbowRequest = Math.max(elbowRequest, motor_Elbow.getCurrentPosition());
                 armPosnCtrl = true;
-                avgFrontDist = 1;
             }
             else {
                 if (gamepad2.right_stick_y > 0.1) {
-//                    motor_Elbow.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-//                        motor_Elbow.setPower(gamepad2.right_stick_y * -0.1);
+                    if(!armPosnCtrl){
+                        elbowRequest = motor_Elbow.getCurrentPosition();
+                    }
+                    motor_Elbow.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                    motor_Elbow.setPower(0);
+                    if((motor_Elbow.getCurrentPosition()<1800)&& !gamepad2.right_bumper) {
+                        motor_Elbow.setPower(gamepad2.right_stick_y * -0.1);
+                    }
+                    else {
+                        motor_Elbow.setPower(gamepad2.right_stick_y * -1);
+                    }
+                    elbowRequest = Math.min(elbowRequest, motor_Elbow.getCurrentPosition());
                     armPosnCtrl = true;
-                    avgFrontDist = 2;
                 }
             }
 
-            if(gamepad2.a){
-                armHangSpecimenPosition(40, 1825);
+            if(gamepad2.left_stick_y<-0.1) {
+                if(!extendPosnCtrl){
+                    extendRequest = 10;
+                }
+                motor_Extend.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                motor_Extend.setPower(-gamepad2.left_stick_y*0.75);
+                extendRequest = motor_Extend.getCurrentPosition();
+                extendPosnCtrl = true;
+            }
+            else {
+                if (gamepad2.left_stick_y > 0.1) {
+                    if(!extendPosnCtrl){
+                        extendRequest = motor_Extend.getCurrentPosition();
+                    }
+                    motor_Extend.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                    motor_Extend.setPower(-gamepad2.left_stick_y * 0.5);
+                    extendRequest = motor_Extend.getCurrentPosition();
+                    extendPosnCtrl = true;
+                }
+            }
+
+            if(((Math.abs(elbowRequest-motor_Elbow.getCurrentPosition())>armExtensionsTol))&&(Math.abs(gamepad2.right_stick_y)<0.1)&&armPosnCtrl){
+                motor_Elbow.setPower(0);
+                motor_Elbow.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                motor_Elbow.setTargetPosition(elbowRequest);
+                motor_Elbow.setPower(0.7);
+                motor_Elbow.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 armPosnCtrl = false;
-                avgFrontDist = 3;
+            }
+
+            if(((Math.abs(extendRequest-motor_Extend.getCurrentPosition())>armExtensionsTol))&&(Math.abs(gamepad2.left_stick_y)<0.1)&&extendPosnCtrl){
+                motor_Extend.setPower(0);
+                motor_Extend.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                motor_Extend.setTargetPosition(extendRequest);
+                motor_Extend.setPower(0.3);
+                motor_Extend.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                extendPosnCtrl = false;
+            }
+            drive = (gamepad1.left_stick_y)*-0.6;
+            twist = gamepad1.right_stick_x*0.5;
+            strafe = gamepad1.left_stick_x;
+            if(gamepad1.dpad_up){
+                yawReq = 0;
+            }
+            else {
+                if(gamepad1.dpad_down){
+                    yawReq = 180;
+                }
+                else {
+                    if (gamepad1.dpad_left){
+                        yawReq = 90;
+                    }
+                    else {
+                        if(gamepad1.dpad_right){
+                            yawReq = -90;
+                        }
+                    }
+                }
+            }
+            avgFrontDist = 0.5*(FLDist.getDistance(DistanceUnit.INCH)+ FRDist.getDistance(DistanceUnit.INCH));
+            extendCmd = (int) ((avgFrontDist - 4.5)*150 - 15)*-1;
+            if(gamepad1.dpad_up || gamepad1.dpad_down || gamepad1.dpad_left || gamepad1.dpad_right){
+                yaw=imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+                if(yaw<-150){
+                    yaw = 360+(yaw);
+                }
+                pidDrive(PIDControl(yawReq, yaw));
+            }
+            else {
+                if(gamepad1.x){
+                    if(gamepad1.right_bumper){
+                        mecanum_drive(0.2, 0, 0);
+                        if(!finalTry) {
+                            armHangSpecimenPosition(hangExtendPrepPosn, hangElbowFinalPosn);
+                        }
+                        finalTry = true;
+                    }
+                    else {
+                        hangSpecimen(3);
+                        finalTry = false;
+                    }
+                }
+                else {
+                    if (gamepad1.y) {
+                        if(gamepad1.right_bumper){
+                            armHangSpecimenPosition(extendCmd, hangElbowPrepPosn);
+                        }
+                        else {
+                            armHangSpecimenPosition(hangExtendPosn, hangElbowPosn);
+                        }
+                    } else {
+                        mecanum_drive(drive, strafe, twist);
+                    }
+                }
+            }
+            if(gamepad1.a){
+                pidDrive(PIDControl(145, imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES)));
+            }
+            if(gamepad2.a){
+                if(!gamepad2.right_bumper) {
+                    armHangSpecimenPosition(2100, 1650);
+                }
+                else {
+                    armHangSpecimenPosition(40, 1650);
+                }
+            }
+            if(gamepad2.b){
+                if(!gamepad2.right_bumper) {
+                    armHangSpecimenPosition(1500, 400);
+                }
+                else {
+                    armHangSpecimenPosition(40, 400);
+                }
+            }
+            if(gamepad2.x){
+                if(!gamepad2.right_bumper) {
+                    armHangSpecimenPosition(5, 3200);
+                }
+                else {
+                    armHangSpecimenPosition(5, 100);
+                }
+            }
+            if(gamepad1.left_bumper && gamepad1.right_bumper){
+                resetArmExtensions();
+            }
+            if(gamepad2.right_trigger>0){
+                motor_Gripper.setPosition(gripperOpenPosn);
+            }
+            else {
+                motor_Gripper.setPosition(gripperClosePosn);
             }
         }
     }
@@ -176,15 +320,15 @@ public class TeleOp2 extends LinearOpMode {
         motor_RRM.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
     public void armHangSpecimenPosition(int extend, int elbow){
-//        extendRequest = extend;
-//        elbowRequest = elbow;
+        extendRequest = extend;
+        elbowRequest = elbow;
         motor_Elbow.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motor_Elbow.setTargetPosition(elbow);
         motor_Elbow.setPower(0.9);
         motor_Elbow.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor_Extend.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motor_Extend.setTargetPosition(extend);
-        motor_Extend.setPower(0.8);
+        motor_Extend.setPower(0.99);
         motor_Extend.setMode(DcMotor.RunMode.RUN_TO_POSITION);
     }
 
@@ -282,7 +426,7 @@ public class TeleOp2 extends LinearOpMode {
         telemetry.addData("PID power", power);
         telemetry.addData("Average Distance", avgFrontDist);
         telemetry.addData("Extend Cmd", extendCmd);
-        telemetry.addData("Right Y  ", gamepad2.right_stick_y);
+        telemetry.addData("Right Y", gamepad2.right_stick_y);
         YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
 //        telemetry.addData("Yaw (Z)", "%.2f Deg. (Heading)", orientation.getYaw(AngleUnit.DEGREES));
         telemetry.update();

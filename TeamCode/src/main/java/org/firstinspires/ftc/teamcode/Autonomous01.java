@@ -69,7 +69,7 @@ public class Autonomous01 extends LinearOpMode {
     double distanceTol = 1;
     double power=0;
     double gripperOpenPosn = 0.99;
-    double gripperSampleClosePosn = 0;
+    double gripperSampleClosePosn = 0.1;
     double gripperClosePosn = 0;
     int autonomousStage = -1;
     int armExtensionsTol = 10;
@@ -84,10 +84,10 @@ public class Autonomous01 extends LinearOpMode {
     int elbowSamplePickAngle = -20;
     double elbowCountPerDegree = 14.67;
     int extendHomePosn = 40;
-    int extendStartPosn = 1100;
-    int elbowStartPosn = 1230;
-    int elbowHangPosn = 1050;
-    int elbowSpecimenPickPosn = 775;
+    int extendStartPosn = 600;
+    int elbowStartPosn = 1100;
+    int elbowHangPosn = 950;
+    int elbowSpecimenPickPosn = 600;
     int extendHangPosn = 450;  //-800;
     int elbowHangAngle = 0;
     boolean armPosnControl = false;
@@ -110,7 +110,7 @@ public class Autonomous01 extends LinearOpMode {
         while(!isStarted()){
             distTelemetry();
             if(timer.seconds()<2) {
-                motor_Gripper.setPosition(gripperOpenPosn);
+                motor_Gripper.setPosition(0.35);
                 motor_Elbow.setTargetPosition(elbowStartPosn);
                 motor_Elbow.setPower(0.9);
                 if(motor_Elbow.getCurrentPosition()>400) {
@@ -137,7 +137,7 @@ public class Autonomous01 extends LinearOpMode {
                         power = PIDControl(hangDist, FLDist.getDistance(DistanceUnit.INCH), Kp_posn, Kd_posn, maxPID_Power_posn);
                         drvStraight(-power);
                     } else {
-                        motor_Extend.setTargetPosition(extendStartPosn - 100);
+                        motor_Extend.setTargetPosition(extendStartPosn + 200);
                         motor_Elbow.setTargetPosition(elbowHangPosn);
                         drvStraight(0.3);
                         timer.reset();
@@ -145,7 +145,7 @@ public class Autonomous01 extends LinearOpMode {
                     }
                 }
                 else {
-                    motor_Extend.setTargetPosition(extendStartPosn - 100);
+                    motor_Extend.setTargetPosition(extendStartPosn + 200);
                     motor_Elbow.setTargetPosition(elbowHangPosn);
                     drvStraight(0.3);
                     timer.reset();
@@ -170,7 +170,7 @@ public class Autonomous01 extends LinearOpMode {
                 }
             }
             if(autonomousStage ==3) {
-                if(motor_Extend.getCurrentPosition()>-800){
+                if(motor_Extend.getCurrentPosition()<400){
                     autonomousStage = 4;
                     startTime = getRuntime();
                 }
@@ -314,17 +314,19 @@ public class Autonomous01 extends LinearOpMode {
                     } else {
                         pidDrive(0);
                         resetDriveEncoders();
+                        startTime = getRuntime();
                         autonomousStage = 14;
                     }
                 } else {
                     pidDrive(0);
                     resetDriveEncoders();
+                    startTime = getRuntime();
                     autonomousStage = 14;
                 }
             }
             if(autonomousStage ==14){
-                if(Math.abs(Math.abs(motor_FLM.getCurrentPosition()) - 200) > 20){
-                    power = PIDControl(200, Math.abs(motor_FLM.getCurrentPosition()), Kp_strf, Kd_strf, maxPID_Power_strf);
+                if((Math.abs(Math.abs(motor_FLM.getCurrentPosition()) - 350) > 20)&& (getRuntime()-startTime<0.75)){
+                    power = PIDControl(400, Math.abs(motor_FLM.getCurrentPosition()), Kp_strf, Kd_strf, maxPID_Power_strf);
                     drvStraight(power);
                 }
                 else {
@@ -401,20 +403,20 @@ public class Autonomous01 extends LinearOpMode {
                         drvStraight(-power);
                     } else {
                         drvStraight(0);
-                        extendCmd = (int) ((avgFrontDist - 4.5)*150 - 45)*-1;
+                        extendCmd = (int) ((avgFrontDist - 6.5)*150 - 35)*1;
                     }
                 }
                 else {
                     drvStraight(0);
                     startTime = getRuntime();
-                    extendCmd = (int) ((avgFrontDist - 4.5)*150 -45)*-1;
+                    extendCmd = (int) ((avgFrontDist - 6.5)*150 - 35)*1;
                     motor_Extend.setTargetPosition(extendCmd);
                     autonomousStage = 20;
                 }
             }
             if(autonomousStage ==20){
                 if(getRuntime()-startTime>0) {
-                    if (motor_Extend.getCurrentPosition() < (extendCmd + 30)) {
+                    if (motor_Extend.getCurrentPosition() < (extendCmd - 30)) {
                         motor_Gripper.setPosition(gripperClosePosn);
                         timer.reset();
                         autonomousStage = 21;
@@ -423,6 +425,7 @@ public class Autonomous01 extends LinearOpMode {
             }
             if(autonomousStage == 21){
                 if(timer.seconds()>1) {
+                    motor_Extend.setTargetPosition(400);
                     motor_Elbow.setTargetPosition(elbowStartPosn+25);
                     drvStraight(-0.2);
                     autonomousStage = 22;
@@ -433,9 +436,9 @@ public class Autonomous01 extends LinearOpMode {
                     drvStraight(0);
                 }
                 if(motor_Elbow.getCurrentPosition()>elbowSpecimenPickPosn+400) {
-                    motor_Extend.setTargetPosition(extendStartPosn + 800);
+                    motor_Extend.setTargetPosition(extendStartPosn - 300);
                     startTime = getRuntime();
-                    autonomousStage = -2;
+                    autonomousStage = 23;
                 }
             }
             if(autonomousStage ==23){
@@ -522,7 +525,7 @@ public class Autonomous01 extends LinearOpMode {
                 autonomousStage = 29;
             }
             if(autonomousStage ==29) {
-                if(motor_Extend.getCurrentPosition()>-200){
+                if(motor_Extend.getCurrentPosition()<200){
                     if(getRuntime()-startTime<2) {
                         yaw = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
                         if (yaw < -150) {
@@ -556,7 +559,7 @@ public class Autonomous01 extends LinearOpMode {
                 }
             }
             if (autonomousStage == 31){
-                if(motor_Extend.getCurrentPosition()>-200){
+                if(motor_Extend.getCurrentPosition()<200){
                     if(getRuntime()-startTime<0.5) {
                         yaw = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
                         if (yaw < -150) {
@@ -585,20 +588,20 @@ public class Autonomous01 extends LinearOpMode {
                         drvStraight(-power);
                     } else {
                         drvStraight(0);
-                        extendCmd = (int) ((avgFrontDist - 4.5)*150 -45 )*-1;
+                        extendCmd = (int) ((avgFrontDist - 6.5)*150 - 35)*1;
                     }
                 }
                 else {
                     drvStraight(0);
                     startTime = getRuntime();
-                    extendCmd = (int) ((avgFrontDist - 4.5)*150 -45)*-1;
+                    extendCmd = (int) ((avgFrontDist - 6.5)*150 - 35)*1;
                     motor_Extend.setTargetPosition(extendCmd);
                     autonomousStage = 33;
                 }
             }
             if(autonomousStage ==33){
                 if(getRuntime()-startTime>0) {
-                    if (motor_Extend.getCurrentPosition() < (extendCmd + 30)) {
+                    if (motor_Extend.getCurrentPosition() < (extendCmd - 30)) {
                         motor_Gripper.setPosition(gripperClosePosn);
                         timer.reset();
                         autonomousStage = 34;
@@ -607,6 +610,7 @@ public class Autonomous01 extends LinearOpMode {
             }
             if(autonomousStage==34){
                 if(timer.seconds()>1) {
+                    motor_Extend.setTargetPosition(400);
                     motor_Elbow.setTargetPosition(elbowStartPosn+25);
                     drvStraight(-0.2);
                     startTime = getRuntime();
@@ -618,7 +622,7 @@ public class Autonomous01 extends LinearOpMode {
                     drvStraight(0);
                 }
                 if(motor_Elbow.getCurrentPosition()>elbowSpecimenPickPosn+400) {
-                    motor_Extend.setTargetPosition(extendStartPosn + 800);
+                    motor_Extend.setTargetPosition(extendStartPosn - 300);
                     startTime = getRuntime();
                     autonomousStage = 36;
                 }

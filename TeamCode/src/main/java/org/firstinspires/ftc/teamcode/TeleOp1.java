@@ -13,7 +13,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
-@TeleOp(name="RemoteControl")
+@TeleOp(name="RemoteControl 1")
 public class TeleOp1 extends LinearOpMode {
 
 
@@ -39,8 +39,8 @@ public class TeleOp1 extends LinearOpMode {
 
     IMU imu;
 
-    double gripperOpenPosn = 0.6;
-    double gripperClosePosn = 0.15;
+    double gripperOpenPosn = 0.7;
+    double gripperClosePosn = 0.1;
     int elbowRequest = 0;
     int extendRequest = 0;
     int armExtensionsTol = 50;
@@ -62,10 +62,10 @@ public class TeleOp1 extends LinearOpMode {
     double hangDistTol = 1;
     int extendCmd = 1200;
     double avgFrontDist = 0;
-    int hangExtendPrepPosn = 1200;                  //was -650
-    int hangElbowPrepPosn = 775;                    // was 2000
-    int hangExtendPosn = 1000;                 // was -450
-    int hangElbowPosn = 1250;                    // was 800
+    int hangExtendPrepPosn = 750;                  //was 1200
+    int hangElbowPrepPosn = 575;                    // was 2000
+    int hangExtendPosn = 600;                 // was 1000
+    int hangElbowPosn = 1100;                    // was 1250
     int hangElbowFinalPosn = 900;                    // was 800
     boolean finalTry = false;
     boolean extendPosnCtrl = false;
@@ -108,7 +108,7 @@ public class TeleOp1 extends LinearOpMode {
             else {
                 if (gamepad2.right_stick_y > 0.1) {
                     if(!armPosnCtrl){
-                        elbowRequest = 10;
+                        elbowRequest = motor_Elbow.getCurrentPosition();
                     }
                     motor_Elbow.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                     motor_Elbow.setPower(0);
@@ -135,7 +135,7 @@ public class TeleOp1 extends LinearOpMode {
             else {
                 if (gamepad2.left_stick_y > 0.1) {
                     if(!extendPosnCtrl){
-                        extendRequest = 10;
+                        extendRequest = motor_Extend.getCurrentPosition();
                     }
                     motor_Extend.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                     motor_Extend.setPower(-gamepad2.left_stick_y * 0.5);
@@ -183,7 +183,7 @@ public class TeleOp1 extends LinearOpMode {
                 }
             }
             avgFrontDist = 0.5*(FLDist.getDistance(DistanceUnit.INCH)+ FRDist.getDistance(DistanceUnit.INCH));
-            extendCmd = (int) ((avgFrontDist - 4.5)*150 - 15)*-1;
+            extendCmd = (int) ((avgFrontDist - 6.5)*150 - 35)*1;
             if(gamepad1.dpad_up || gamepad1.dpad_down || gamepad1.dpad_left || gamepad1.dpad_right){
                 yaw=imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
                 if(yaw<-150){
@@ -222,10 +222,28 @@ public class TeleOp1 extends LinearOpMode {
                 pidDrive(PIDControl(145, imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES)));
             }
             if(gamepad2.a){
-                armHangSpecimenPosition(2100, 1825);
+                if(!gamepad2.right_bumper) {
+                    armHangSpecimenPosition(2100, 1650);
+                }
+                else {
+                    armHangSpecimenPosition(40, 1650);
+                }
             }
             if(gamepad2.b){
-                armHangSpecimenPosition(40, 1825);
+                if(!gamepad2.right_bumper) {
+                    armHangSpecimenPosition(1500, 400);
+                }
+                else {
+                    armHangSpecimenPosition(40, 400);
+                }
+            }
+            if(gamepad2.x){
+                if(!gamepad2.right_bumper) {
+                    armHangSpecimenPosition(5, 3200);
+                }
+                else {
+                    armHangSpecimenPosition(5, 100);
+                }
             }
             if(gamepad1.left_bumper && gamepad1.right_bumper){
                 resetArmExtensions();
@@ -310,7 +328,7 @@ public class TeleOp1 extends LinearOpMode {
         motor_Elbow.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor_Extend.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motor_Extend.setTargetPosition(extend);
-        motor_Extend.setPower(0.8);
+        motor_Extend.setPower(0.99);
         motor_Extend.setMode(DcMotor.RunMode.RUN_TO_POSITION);
     }
 
