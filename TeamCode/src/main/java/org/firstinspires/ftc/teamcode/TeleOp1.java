@@ -39,7 +39,7 @@ public class TeleOp1 extends LinearOpMode {
 
     IMU imu;
 
-    double gripperOpenPosn = 0.7;
+    double gripperOpenPosn = 0.9;
     double gripperClosePosn = 0.1;
     int elbowRequest = 0;
     int extendRequest = 0;
@@ -63,9 +63,9 @@ public class TeleOp1 extends LinearOpMode {
     int extendCmd = 1200;
     double avgFrontDist = 0;
     int hangExtendPrepPosn = 750;                  //was 1200
-    int hangElbowPrepPosn = 575;                    // was 2000
+    int hangElbowPrepPosn = 675;                    // was 2000
     int hangExtendPosn = 600;                 // was 1000
-    int hangElbowPosn = 1100;                    // was 1250
+    int hangElbowPosn = 1200;                    // was 1250
     int hangElbowFinalPosn = 900;                    // was 800
     boolean finalTry = false;
     boolean extendPosnCtrl = false;
@@ -140,6 +140,7 @@ public class TeleOp1 extends LinearOpMode {
                     motor_Extend.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                     motor_Extend.setPower(-gamepad2.left_stick_y * 0.5);
                     extendRequest = motor_Extend.getCurrentPosition();
+                    extendRequest = Math.max(10, extendRequest);
                     extendPosnCtrl = true;
                 }
             }
@@ -183,7 +184,7 @@ public class TeleOp1 extends LinearOpMode {
                 }
             }
             avgFrontDist = 0.5*(FLDist.getDistance(DistanceUnit.INCH)+ FRDist.getDistance(DistanceUnit.INCH));
-            extendCmd = (int) ((avgFrontDist - 6.5)*150 - 35)*1;
+            extendCmd = (int) ((avgFrontDist - 6.5)*150 + 65)*1;
             if(gamepad1.dpad_up || gamepad1.dpad_down || gamepad1.dpad_left || gamepad1.dpad_right){
                 yaw=imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
                 if(yaw<-150){
@@ -206,9 +207,9 @@ public class TeleOp1 extends LinearOpMode {
                     }
                 }
                 else {
-                    if (gamepad1.y) {
-                        if(gamepad1.right_bumper){
-                            armHangSpecimenPosition(extendCmd, hangElbowPrepPosn);
+                    if (gamepad2.y) {
+                        if(!gamepad2.right_bumper){
+                            armHangSpecimenPosition(700, hangElbowPrepPosn);
                         }
                         else {
                             armHangSpecimenPosition(hangExtendPosn, hangElbowPosn);
@@ -234,12 +235,12 @@ public class TeleOp1 extends LinearOpMode {
                     armHangSpecimenPosition(1500, 400);
                 }
                 else {
-                    armHangSpecimenPosition(40, 400);
+                    armHangSpecimenPosition(40, 500);
                 }
             }
             if(gamepad2.x){
                 if(!gamepad2.right_bumper) {
-                    armHangSpecimenPosition(5, 3200);
+                    armHangSpecimenPosition(5, 3300);
                 }
                 else {
                     armHangSpecimenPosition(5, 100);
@@ -248,7 +249,7 @@ public class TeleOp1 extends LinearOpMode {
             if(gamepad1.left_bumper && gamepad1.right_bumper){
                 resetArmExtensions();
             }
-            if(gamepad2.right_trigger>0){
+            if(gamepad2.left_trigger>0){
                 motor_Gripper.setPosition(gripperOpenPosn);
             }
             else {
@@ -320,6 +321,7 @@ public class TeleOp1 extends LinearOpMode {
         motor_RRM.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
     public void armHangSpecimenPosition(int extend, int elbow){
+        extend = Math.max(extend, 10);
         extendRequest = extend;
         elbowRequest = elbow;
         motor_Elbow.setMode(DcMotor.RunMode.RUN_USING_ENCODER);

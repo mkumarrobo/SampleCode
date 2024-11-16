@@ -39,7 +39,7 @@ public class TeleOp2 extends LinearOpMode {
 
     IMU imu;
 
-    double gripperOpenPosn = 0.7;
+    double gripperOpenPosn = 0.9;
     double gripperClosePosn = 0.1;
     int elbowRequest = 0;
     int extendRequest = 0;
@@ -64,7 +64,7 @@ public class TeleOp2 extends LinearOpMode {
     double avgFrontDist = 0;
     int hangExtendPrepPosn = 1200;                  //was -650
     int hangElbowPrepPosn = 775;                    // was 2000
-    int hangExtendPosn = 1000;                 // was -450
+    int hangExtendPosn = 800;                 // was -450
     int hangElbowPosn = 1250;                    // was 800
     int hangElbowFinalPosn = 900;                    // was 800
     boolean finalTry = false;
@@ -206,9 +206,9 @@ public class TeleOp2 extends LinearOpMode {
                     }
                 }
                 else {
-                    if (gamepad1.y) {
-                        if(gamepad1.right_bumper){
-                            armHangSpecimenPosition(extendCmd, hangElbowPrepPosn);
+                    if (gamepad2.y) {
+                        if(gamepad2.right_bumper){
+                            armHangSpecimenPosition(700, hangElbowPrepPosn);
                         }
                         else {
                             armHangSpecimenPosition(hangExtendPosn, hangElbowPosn);
@@ -234,7 +234,7 @@ public class TeleOp2 extends LinearOpMode {
                     armHangSpecimenPosition(1500, 400);
                 }
                 else {
-                    armHangSpecimenPosition(40, 400);
+                    armHangSpecimenPosition(40, 500);
                 }
             }
             if(gamepad2.x){
@@ -320,6 +320,7 @@ public class TeleOp2 extends LinearOpMode {
         motor_RRM.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
     public void armHangSpecimenPosition(int extend, int elbow){
+        extend = Math.max(extend, 10);
         extendRequest = extend;
         elbowRequest = elbow;
         motor_Elbow.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
