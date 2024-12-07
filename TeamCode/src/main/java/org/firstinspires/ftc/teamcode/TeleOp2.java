@@ -27,6 +27,8 @@ public class TeleOp2 extends LinearOpMode {
     DcMotor motor_Riser = null;
 
     Servo motor_Gripper = null;
+    Servo motor_Level2Arm = null;
+    Servo motor_Level2Base = null;
 
 
     DistanceSensor FRDist = null;
@@ -63,12 +65,13 @@ public class TeleOp2 extends LinearOpMode {
     int extendCmd = 1200;
     double avgFrontDist = 0;
     int hangExtendPrepPosn = 1200;                  //was -650
-    int hangElbowPrepPosn = 775;                    // was 2000
+    int hangElbowPrepPosn = 675;                    // was 2000
     int hangExtendPosn = 800;                 // was -450
-    int hangElbowPosn = 1250;                    // was 800
+    int hangElbowPosn = 1200;                    // was 800
     int hangElbowFinalPosn = 900;                    // was 800
     boolean finalTry = false;
     boolean extendPosnCtrl = false;
+    int hangState = 0;
     boolean basketRequest = false;
     boolean retractArm = false;
 
@@ -90,17 +93,30 @@ public class TeleOp2 extends LinearOpMode {
 
         while (opModeIsActive()){
             distTelemetry();
+            if(hangState>0){
+                if((hangState == 1) && motor_Elbow.getCurrentPosition()>1920) {
+                    motor_Level2Arm.setPosition(0.6);
+                }
+                if((hangState == 2) && motor_Elbow.getCurrentPosition()<150) {
+                    motor_Level2Base.setPosition(0.25);
+                }
+            }
             if(gamepad2.right_stick_y<-0.1) {
                 if(!armPosnCtrl){
                     elbowRequest = 10;
                 }
                 motor_Elbow.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 motor_Elbow.setPower(0);
-                if(!gamepad2.right_bumper) {
+                if(!gamepad2.right_bumper&&motor_Elbow.getCurrentPosition()<4500) {
                     motor_Elbow.setPower(gamepad2.right_stick_y * -0.5);
                 }
                 else{
-                    motor_Elbow.setPower(gamepad2.right_stick_y * -1);
+                    if(motor_Elbow.getCurrentPosition()<4500) {
+                        motor_Elbow.setPower(gamepad2.right_stick_y * -1);
+                    }
+                    else{
+                        motor_Elbow.setPower(0);
+                    }
                 }
                 elbowRequest = Math.max(elbowRequest, motor_Elbow.getCurrentPosition());
                 armPosnCtrl = true;
@@ -239,10 +255,14 @@ public class TeleOp2 extends LinearOpMode {
             }
             if(gamepad2.x){
                 if(!gamepad2.right_bumper) {
-                    armHangSpecimenPosition(5, 3200);
+                    motor_Level2Base.setPosition(0.5);
+                    motor_Level2Arm.setPosition(0.0);
+                    armHangSpecimenPosition(5, 1950);
+                    hangState = 1;
                 }
                 else {
                     armHangSpecimenPosition(5, 100);
+                    hangState = 2;
                 }
             }
             if(gamepad1.left_bumper && gamepad1.right_bumper){
@@ -366,13 +386,15 @@ public class TeleOp2 extends LinearOpMode {
     }
     public void initializeIMU(){
         imu=hardwareMap.get(IMU.class, "IMU");
-        RevHubOrientationOnRobot.LogoFacingDirection logoDirection = RevHubOrientationOnRobot.LogoFacingDirection.UP;
-        RevHubOrientationOnRobot.UsbFacingDirection  usbDirection  = RevHubOrientationOnRobot.UsbFacingDirection.FORWARD;
+        RevHubOrientationOnRobot.LogoFacingDirection logoDirection = RevHubOrientationOnRobot.LogoFacingDirection.LEFT;
+        RevHubOrientationOnRobot.UsbFacingDirection  usbDirection  = RevHubOrientationOnRobot.UsbFacingDirection.UP;
         RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(logoDirection, usbDirection);
         imu.initialize(new IMU.Parameters(orientationOnRobot));
     }
     public void initServo(){
         motor_Gripper = hardwareMap.servo.get("servoGripper");
+        motor_Level2Arm = hardwareMap.servo.get("servoLevel2Arm");
+        motor_Level2Base = hardwareMap.servo.get("servoLevel2Base");
     }
 
 
