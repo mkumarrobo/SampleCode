@@ -13,8 +13,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
-@TeleOp(name="RemoteControl 1")
-public class TeleOp1 extends LinearOpMode {
+@TeleOp(name="RemoteControl 2")
+public class TeleOp2 extends LinearOpMode {
 
 
     DcMotor motor_FLM = null;
@@ -29,6 +29,7 @@ public class TeleOp1 extends LinearOpMode {
     Servo motor_Gripper = null;
     Servo motor_Level2Arm = null;
     Servo motor_Level2Base = null;
+
 
     DistanceSensor FRDist = null;
     DistanceSensor FLDist = null;
@@ -63,10 +64,10 @@ public class TeleOp1 extends LinearOpMode {
     double hangDistTol = 1;
     int extendCmd = 1200;
     double avgFrontDist = 0;
-    int hangExtendPrepPosn = 750;                  //was 1200
+    int hangExtendPrepPosn = 1200;                  //was -650
     int hangElbowPrepPosn = 675;                    // was 2000
-    int hangExtendPosn = 600;                 // was 1000
-    int hangElbowPosn = 1200;                    // was 1250
+    int hangExtendPosn = 800;                 // was -450
+    int hangElbowPosn = 1200;                    // was 800
     int hangElbowFinalPosn = 900;                    // was 800
     boolean finalTry = false;
     boolean extendPosnCtrl = false;
@@ -99,19 +100,6 @@ public class TeleOp1 extends LinearOpMode {
                 if((hangState == 2) && motor_Elbow.getCurrentPosition()<150) {
                     motor_Level2Base.setPosition(0.25);
                 }
-
-            }
-            if(gamepad2.right_bumper){
-//                motor_Level2Arm.setPosition(0.5);
-            }
-            else{
-//                motor_Level2Arm.setPosition(0.0);
-            }
-            if(gamepad2.right_trigger>0){
-//                motor_Level2Base.setPosition(0.5);
-            }
-            else {
-//                motor_Level2Base.setPosition(0.25);
             }
             if(gamepad2.right_stick_y<-0.1) {
                 if(!armPosnCtrl){
@@ -156,7 +144,7 @@ public class TeleOp1 extends LinearOpMode {
                     extendRequest = 10;
                 }
                 motor_Extend.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                motor_Extend.setPower(-gamepad2.left_stick_y);
+                motor_Extend.setPower(-gamepad2.left_stick_y*0.75);
                 extendRequest = motor_Extend.getCurrentPosition();
                 extendPosnCtrl = true;
             }
@@ -168,7 +156,6 @@ public class TeleOp1 extends LinearOpMode {
                     motor_Extend.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                     motor_Extend.setPower(-gamepad2.left_stick_y * 0.5);
                     extendRequest = motor_Extend.getCurrentPosition();
-                    extendRequest = Math.max(10, extendRequest);
                     extendPosnCtrl = true;
                 }
             }
@@ -192,7 +179,7 @@ public class TeleOp1 extends LinearOpMode {
             }
             drive = (gamepad1.left_stick_y)*-0.6;
             twist = gamepad1.right_stick_x*0.5;
-            strafe = (gamepad1.right_trigger-gamepad1.left_trigger);
+            strafe = gamepad1.left_stick_x;
             if(gamepad1.dpad_up){
                 yawReq = 0;
             }
@@ -212,7 +199,7 @@ public class TeleOp1 extends LinearOpMode {
                 }
             }
             avgFrontDist = 0.5*(FLDist.getDistance(DistanceUnit.INCH)+ FRDist.getDistance(DistanceUnit.INCH));
-            extendCmd = (int) ((avgFrontDist - 6.5)*150 + 65)*1;
+            extendCmd = (int) ((avgFrontDist - 4.5)*150 - 15)*-1;
             if(gamepad1.dpad_up || gamepad1.dpad_down || gamepad1.dpad_left || gamepad1.dpad_right){
                 yaw=imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
                 if(yaw<-150){
@@ -236,7 +223,7 @@ public class TeleOp1 extends LinearOpMode {
                 }
                 else {
                     if (gamepad2.y) {
-                        if(!gamepad2.right_bumper){
+                        if(gamepad2.right_bumper){
                             armHangSpecimenPosition(700, hangElbowPrepPosn);
                         }
                         else {
@@ -281,7 +268,7 @@ public class TeleOp1 extends LinearOpMode {
             if(gamepad1.left_bumper && gamepad1.right_bumper){
                 resetArmExtensions();
             }
-            if(gamepad2.left_trigger>0){
+            if(gamepad2.right_trigger>0){
                 motor_Gripper.setPosition(gripperOpenPosn);
             }
             else {
@@ -336,7 +323,7 @@ public class TeleOp1 extends LinearOpMode {
 
 
     public void resetArmExtensions(){
-       motor_Extend.setPower(-0.5);
+        motor_Extend.setPower(-0.5);
         motor_Elbow.setPower(-0.2);
         motor_Extend.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         motor_Elbow.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
