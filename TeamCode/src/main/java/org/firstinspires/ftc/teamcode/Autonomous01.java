@@ -11,6 +11,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 /**
  * Control Hub
@@ -111,11 +112,11 @@ public class Autonomous01 extends LinearOpMode {
             distTelemetry();
             if(timer.seconds()<2) {
                 motor_Gripper.setPosition(0.35);
-                motor_Elbow.setTargetPosition(elbowStartPosn);
+                motor_Elbow.setTargetPosition(250);
                 motor_Elbow.setPower(0.9);
-                if(motor_Elbow.getCurrentPosition()>400) {
+                if(motor_Elbow.getCurrentPosition()>100) {
                     motor_Elbow.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    motor_Extend.setTargetPosition(extendStartPosn);
+                    motor_Extend.setTargetPosition(extendStartPosn-590);
                     motor_Extend.setPower(0.95);
                     motor_Extend.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 }
@@ -128,6 +129,8 @@ public class Autonomous01 extends LinearOpMode {
         motor_Gripper.setPosition(gripperSampleClosePosn);
         while(opModeIsActive()){
             if(autonomousStage ==-1){
+                motor_Elbow.setTargetPosition(elbowStartPosn-50);
+                motor_Extend.setTargetPosition(extendStartPosn);
                 startTime = getRuntime();
                 autonomousStage = 0;
             }
@@ -166,11 +169,12 @@ public class Autonomous01 extends LinearOpMode {
                     armPosnControl = true;
                     motor_Extend.setTargetPosition(extendHomePosn);
                     timer.reset();
+                    startTime = getRuntime();
                     autonomousStage = 3;
                 }
             }
             if(autonomousStage ==3) {
-                if(motor_Extend.getCurrentPosition()<400){
+                if(motor_Extend.getCurrentPosition()<400||(getRuntime()-startTime>1)){
                     autonomousStage = 4;
                     startTime = getRuntime();
                 }
@@ -211,7 +215,7 @@ public class Autonomous01 extends LinearOpMode {
             }
             if(autonomousStage==6){
                 if((Math.abs(Math.abs(motor_FLM.getCurrentPosition()) - 1450) > 20)&& (getRuntime()-startTime<1)){
-                    power = PIDControl(1450, Math.abs(motor_FLM.getCurrentPosition()), Kp_strf, Kd_strf, 0.8);
+                    power = PIDControl(1450, Math.abs(motor_FLM.getCurrentPosition()), Kp_strf, Kd_strf, 0.7);
                     strafe(power);
                     timer.reset();
                 }
@@ -241,7 +245,7 @@ public class Autonomous01 extends LinearOpMode {
             }
             if(autonomousStage==8){
                 if((Math.abs(Math.abs(motor_FLM.getCurrentPosition()) - 1600) > 20)&& (getRuntime()-startTime<1)){
-                    power = PIDControl(1600, Math.abs(motor_FLM.getCurrentPosition()), Kp_strf, Kd_strf, 0.95);
+                    power = PIDControl(1600, Math.abs(motor_FLM.getCurrentPosition()), Kp_strf, Kd_strf, 0.7);
                     drvStraight(power);
                 }
                 else {
@@ -560,7 +564,7 @@ public class Autonomous01 extends LinearOpMode {
             }
             if(autonomousStage ==30) {
                 if(Math.abs(Math.abs(motor_FLM.getCurrentPosition()) - 2800) > 20){
-                    power = PIDControl(2800, Math.abs(motor_FLM.getCurrentPosition()), Kp_strf, Kd_strf, 0.95);
+                    power = PIDControl(2800, Math.abs(motor_FLM.getCurrentPosition()), Kp_strf, Kd_strf, 0.9);
                     strafe(-power);
                 }
                 else {
@@ -714,7 +718,7 @@ public class Autonomous01 extends LinearOpMode {
                 if(getRuntime()-startTime>0.5) {
                     drvStraight(0);
                     motor_Gripper.setPosition(gripperOpenPosn);
-                    autonomousStage = 41;
+                    autonomousStage = -2;
                 }
             }
             if(autonomousStage ==41) {
@@ -929,8 +933,8 @@ public class Autonomous01 extends LinearOpMode {
     }
     public void initializeIMU(){
         imu=hardwareMap.get(IMU.class, "IMU");
-        RevHubOrientationOnRobot.LogoFacingDirection logoDirection = RevHubOrientationOnRobot.LogoFacingDirection.UP;
-        RevHubOrientationOnRobot.UsbFacingDirection  usbDirection  = RevHubOrientationOnRobot.UsbFacingDirection.FORWARD;
+        RevHubOrientationOnRobot.LogoFacingDirection logoDirection = RevHubOrientationOnRobot.LogoFacingDirection.LEFT;
+        RevHubOrientationOnRobot.UsbFacingDirection  usbDirection  = RevHubOrientationOnRobot.UsbFacingDirection.UP;
         RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(logoDirection, usbDirection);
         imu.initialize(new IMU.Parameters(orientationOnRobot));
     }
@@ -952,8 +956,8 @@ public class Autonomous01 extends LinearOpMode {
 //        telemetry.addData("FRM Encoder", motor_FRM.getCurrentPosition());
 //        telemetry.addData("RLM Encoder", motor_RLM.getCurrentPosition());
 //        telemetry.addData("RRM Encoder", motor_RRM.getCurrentPosition());
-//        YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
-//        telemetry.addData("Yaw (Z)", "%.2f Deg. (Heading)", orientation.getYaw(AngleUnit.DEGREES));
+        YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
+        telemetry.addData("Yaw (Z)", "%.2f Deg. (Heading)", orientation.getYaw(AngleUnit.DEGREES));
         telemetry.addData("Autonomous Stage", autonomousStage);
 //        telemetry.addData("Game Time", "%.2f", getRuntime());
         telemetry.update();
