@@ -83,8 +83,8 @@ public class Autonomous2 extends LinearOpMode {
     int elbowZeroDegreeOffset = 837;
     int elbowSamplePickAngle = -20;
     double elbowCountPerDegree = 14.67;
-    int extendHomePosn = -40;
-    int extendStartPosn = -650;
+    int extendHomePosn = 40;
+    int extendStartPosn = 650;
     int elbowStartAngle = 85;
     int elbowDropAngle = 75;
     int extendHangPosn = -450;  //-800;
